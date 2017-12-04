@@ -1,17 +1,16 @@
 'use strict';
 
 import React, { PropTypes } from 'react';
-import tweenState from 'react-tween-state';
 
 import {
   StyleSheet,
   TouchableHighlight,
   View,
-  Text
+  Text,
+  Animated
 } from 'react-native';
 
 var Accordion = React.createClass({
-  mixins: [tweenState.Mixin],
 
   propTypes: {
     activeOpacity: React.PropTypes.number,
@@ -39,7 +38,7 @@ var Accordion = React.createClass({
   getInitialState() {
     return {
       is_visible: false,
-      height: 0,
+      height: new Animated.Value(0),
       content_height: 0
     };
   },
@@ -55,11 +54,12 @@ var Accordion = React.createClass({
   toggle() {
     this.state.is_visible = !this.state.is_visible;
 
-    this.tweenState('height', {
-      easing: tweenState.easingTypes[this.props.easing],
-      duration: this.props.animationDuration,
-      endValue: this.state.height === 0 ? this.state.content_height : 0
-    });
+    Animated.parallel([
+      Animated.timing(this.state.height, {
+        duration: 200,
+        toValue: this.state.is_visible ? this.state.content_height : 0,
+      })
+    ]).start();
   },
 
   _onPress() {
@@ -72,13 +72,13 @@ var Accordion = React.createClass({
 
   _getContentHeight() {
     if (this.refs.AccordionContent) {
-      this.refs.AccordionContent.measure((ox, oy, width, height, px, py) => {
+      //this.refs.AccordionContent.measure((ox, oy, width, height, px, py) => {
         // Sets content height in state
         this.setState({
-          height: this.props.expanded ? height : 0,
-          content_height: height
+          height: this.props.expanded ? new Animated.Value(60) : new Animated.Value(0),
+          content_height: 60
         });
-      });
+      //});
     }
   },
 
@@ -105,16 +105,16 @@ var Accordion = React.createClass({
         >
           {this.props.header}
         </TouchableHighlight>
-        <View
+        <Animated.View
           ref="AccordionContentWrapper"
           style={{
-            height: this.getTweeningValue('height')
+            height: this.state.height
           }}
         >
-          <View ref="AccordionContent">
+          <View ref="AccordionContent" style={{flex:1}}>
             {this.props.content}
           </View>
-        </View>
+        </Animated.View>
       </View>
       /*jshint ignore:end */
     );
